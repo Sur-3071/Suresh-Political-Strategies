@@ -1,0 +1,186 @@
+/* Blur and disable background interaction while locked */
+.app-locked {
+  filter: blur(8px);
+  pointer-events: none;
+  user-select: none;
+  height: 100vh;
+  overflow: hidden;
+  transition: filter 0.3s ease;
+}
+
+/* Fullscreen Modal Overlay */
+.auth-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 1rem;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.auth-overlay.hidden {
+  display: none;
+}
+
+/* Popup Card */
+.auth-card {
+  background: #ffffff;
+  width: 100%;
+  max-width: 400px;
+  padding: 2.25rem 2rem;
+  border-radius: 16px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  animation: popIn 0.25s ease-out;
+}
+
+@keyframes popIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.auth-icon {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.auth-card h2 {
+  margin: 0 0 0.5rem;
+  color: #1e293b;
+  font-size: 1.4rem;
+}
+
+.auth-card p {
+  margin: 0 0 1.5rem;
+  color: #64748b;
+  font-size: 0.92rem;
+  line-height: 1.4;
+}
+
+/* OTP Input Boxes */
+.otp-inputs {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 1.25rem;
+}
+
+.otp-box {
+  width: 54px;
+  height: 60px;
+  font-size: 1.75rem;
+  font-weight: 700;
+  text-align: center;
+  border: 2px solid #cbd5e1;
+  border-radius: 10px;
+  color: #0f172a;
+  background: #f8fafc;
+  transition: all 0.2s ease;
+}
+
+.otp-box:focus {
+  outline: none;
+  border-color: #2563eb;
+  background: #ffffff;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15);
+}
+
+.otp-box:disabled {
+  background: #e2e8f0;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Error & Lockout Messages */
+.auth-message {
+  min-height: 20px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #dc2626;
+  margin-bottom: 0.75rem;
+}
+
+.lockout-timer {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+  padding: 0.75rem;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 1.05rem;
+  margin-bottom: 1.25rem;
+}
+
+/* Submit Button */
+.auth-btn {
+  width: 100%;
+  padding: 0.85rem;
+  background: #2563eb;
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.auth-btn:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+
+.auth-btn:disabled {
+  background: #94a3b8;
+  cursor: not-allowed;
+}
+
+/* Shake Animation on Wrong PIN */
+.shake {
+  animation: shake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+@keyframes shake {
+  10%, 90% { transform: translate3d(-2px, 0, 0); }
+  20%, 80% { transform: translate3d(4px, 0, 0); }
+  30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
+  40%, 60% { transform: translate3d(6px, 0, 0); }
+}
+
+/* Top Session Bar */
+.session-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  font-size: 0.88rem;
+  color: #334155;
+}
+
+.lock-now-btn {
+  background: #ef4444;
+  color: #fff;
+  border: none;
+  padding: 0.35rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.lock-now-btn:hover {
+  background: #dc2626;
+}

@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Ward Wise Voter Directory</title>
+
+    <link rel="stylesheet" href="voterstyle.css">
+    <!-- Auth Modal Styles -->
+    <link rel="stylesheet" href="auth.css">
+
+    <!-- PDF Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
+
+<body>
+<!-- HEADER -->
+<header class="title-header">
+  <div class="brand-header">
+    <div class="title-wrapper">
+      <h1 class="main-brand-title" data-text="SURESH STRATEGIES">Suresh Political Strategies</h1>
+      <div class="title-underline"></div>
+    </div>
+    <h2 class="sub-page-title">Ward Wise Voter Directory</h2>
+    <p class="sub-page-desc">Search and manage ward-wise voter records</p>
+  </div>
+</header>
+
+    <!-- 🔐 OTP STYLE SECURITY OVERLAY -->
+    <div id="authOverlay" class="auth-overlay">
+        <div class="auth-card">
+            <div class="auth-icon">🔒</div>
+            <h2>Restricted Access</h2>
+            <p id="authSubtitle">Enter your 4-digit security PIN to access the Voter Directory</p>
+
+            <!-- 4-Digit OTP Boxes -->
+            <div class="otp-inputs" id="otpContainer">
+                <input type="password" inputmode="numeric" maxlength="1" class="otp-box" autocomplete="off">
+                <input type="password" inputmode="numeric" maxlength="1" class="otp-box" autocomplete="off">
+                <input type="password" inputmode="numeric" maxlength="1" class="otp-box" autocomplete="off">
+                <input type="password" inputmode="numeric" maxlength="1" class="otp-box" autocomplete="off">
+            </div>
+
+            <!-- Error / Lockout Message -->
+            <div id="authMessage" class="auth-message"></div>
+
+            <!-- Live Lockout Countdown -->
+            <div id="lockoutTimer" class="lockout-timer" hidden></div>
+
+            <button type="button" id="verifyPinBtn" class="auth-btn">Unlock Directory</button>
+        </div>
+    </div>
+
+    <!-- MAIN APP CONTAINER (Blurred until unlocked) -->
+    <div class="container app-locked" id="mainAppContainer">
+
+        <!-- Optional Session Timer Banner -->
+        <div class="session-bar no-print">
+            <span>🟢 Session Active: <strong id="sessionCountdown">05:00</strong></span>
+            <button type="button" id="manualLockBtn" class="lock-now-btn">Lock Now</button>
+        </div>
+
+        <!-- PDF DOWNLOAD -->
+        <div class="download-container no-print">
+            <button id="downloadPdfBtn" class="pdf-download-btn" type="button">
+                📄 Download Full Report PDF
+            </button>
+        </div>
+
+        <div id="pdfContent">
+
+            <!-- HEADER -->
+            <header class="header">
+                <div>
+                    <h1>Ward Wise Voter Directory</h1>
+                    <p>Search and manage ward-wise voter records</p>
+                </div>
+            </header>
+
+            <!-- FILTERS -->
+            <section class="filters no-print">
+
+                <div class="filter-group">
+                    <label for="wardSelect">Select Ward</label>
+                    <select id="wardSelect">
+                        <option value="ALL">All Wards</option>
+                    </select>
+                </div>
+
+                <div class="filter-group search-group">
+                    <label for="searchInput">Search Voter Details</label>
+                    <input type="search" id="searchInput" placeholder="Search name, voter number, voter ID, relation..."
+                        autocomplete="off">
+                </div>
+
+                <button type="button" id="clearBtn" class="clear-btn">
+                    Clear Search
+                </button>
+
+            </section>
+
+            <!-- VOTER STATISTICS -->
+            <section class="statistics">
+
+                <div class="stat-card total-card">
+                    <div class="stat-icon">👥</div>
+                    <div>
+                        <span>Total Voters</span>
+                        <h2 id="totalVoters">0</h2>
+                    </div>
+                </div>
+
+                <div class="stat-card male-card">
+                    <div class="stat-icon">👨</div>
+                    <div>
+                        <span>Male Voters</span>
+                        <h2 id="maleCount">0</h2>
+                    </div>
+                </div>
+
+                <div class="stat-card female-card">
+                    <div class="stat-icon">👩</div>
+                    <div>
+                        <span>Female Voters</span>
+                        <h2 id="femaleCount">0</h2>
+                    </div>
+                </div>
+
+            </section>
+
+            <!-- VERIFICATION STATISTICS -->
+            <section class="verification-section">
+
+                <div class="table-heading">
+                    <div>
+                        <h2>Voter Verification Dashboard</h2>
+                        <p>Track overall, male, and female verified vs. pending voter records</p>
+                    </div>
+                </div>
+
+                <div class="verification-grid">
+
+                    <div class="verification-card verified-card">
+                        <span>Verified Records</span>
+                        <h2 id="verifiedCount">0</h2>
+                    </div>
+
+                    <div class="verification-card pending-card">
+                        <span>Pending Records</span>
+                        <h2 id="pendingCount">0</h2>
+                    </div>
+
+                    <div class="verification-card percentage-card">
+                        <span>Verification Progress</span>
+                        <h2 id="verificationPercentage">0%</h2>
+                    </div>
+
+                    <div class="verification-card male-verify-card">
+                        <span>👨 Male Verification</span>
+                        <h2 id="maleVerifiedCount">0 / 0</h2>
+                        <small id="malePendingText">0 Pending</small>
+                    </div>
+
+                    <div class="verification-card female-verify-card">
+                        <span>👩 Female Verification</span>
+                        <h2 id="femaleVerifiedCount">0 / 0</h2>
+                        <small id="femalePendingText">0 Pending</small>
+                    </div>
+
+                </div>
+
+                <div class="progress-track">
+                    <div id="verificationProgress" class="progress-fill"></div>
+                </div>
+
+            </section>
+
+            <!-- WARD-WISE VERIFICATION -->
+            <section class="ward-summary-section">
+
+                <div class="table-heading">
+                    <div>
+                        <h2>Ward Wise Verification Summary</h2>
+                        <p>Verification statistics for each ward</p>
+                    </div>
+                </div>
+
+                <div class="table-wrapper">
+
+                    <table class="summary-table">
+                        <thead>
+                            <tr>
+                                <th>Ward Number</th>
+                                <th>Total Voters</th>
+                                <th>Verified</th>
+                                <th>Pending</th>
+                                <th>Progress</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="wardSummaryTable"></tbody>
+                    </table>
+
+                </div>
+
+            </section>
+
+            <!-- VOTER TO ME (PARTY AFFILIATION WARD-WISE SUMMARY) -->
+            <section class="voter-to-me-section">
+
+                <div class="table-heading">
+                    <div>
+                        <h2>Voter To Me — Party Affiliation Summary</h2>
+                        <p>Ward-wise breakdown of Male &amp; Female voters belonging to My Party vs. Another Party</p>
+                    </div>
+                    <div class="party-badges">
+                        <span class="badge-my-party" id="totalMyPartyBadge">My Party: 0</span>
+                        <span class="badge-other-party" id="totalOtherPartyBadge">Another Party: 0</span>
+                    </div>
+                </div>
+
+                <div class="table-wrapper">
+
+                    <table class="summary-table party-summary-table">
+                        <thead>
+                            <tr>
+                                <th>Ward Number</th>
+                                <th>Total Voters</th>
+                                <th class="col-my-party">My Party (Total)</th>
+                                <th class="col-my-party">My Party (Male)</th>
+                                <th class="col-my-party">My Party (Female)</th>
+                                <th class="col-other-party">Another Party (Total)</th>
+                                <th class="col-other-party">Another Party (Male)</th>
+                                <th class="col-other-party">Another Party (Female)</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="voterToMeTable"></tbody>
+                    </table>
+
+                </div>
+
+            </section>
+
+            <!-- FAMILY GROUPS -->
+            <section class="family-section">
+
+                <div class="table-heading">
+                    <div>
+                        <h2>Family Groups</h2>
+                        <p>Surname-wise voter statistics</p>
+                    </div>
+
+                    <div class="record-count" id="familyCount">
+                        0 Families
+                    </div>
+                </div>
+
+                <div id="familyContainer" class="family-container"></div>
+
+            </section>
+
+            <!-- VOTER RECORDS -->
+            <section class="table-section">
+
+                <div class="table-heading">
+
+                    <div>
+                        <h2>Voter Records</h2>
+                        <p>Complete voter details</p>
+                    </div>
+
+                    <div class="record-count" id="count">
+                        0 Records
+                    </div>
+
+                </div>
+
+                <div id="status" class="status" hidden></div>
+
+                <div class="table-wrapper">
+
+                    <table class="records-table">
+
+                        <thead>
+                            <tr>
+                                <th>S.No</th>
+                                <th>Ward Number</th>
+                                <th>Voter No</th>
+                                <th>Voter ID No</th>
+                                <th>Voter Name</th>
+                                <th>Relation Type</th>
+                                <th>Relation Name</th>
+                                <th>Age</th>
+                                <th>Gender</th>
+                                <th>House No</th>
+                                <th class="no-print">Party Status</th>
+                                <th class="no-print">Verification</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="voterTable"></tbody>
+
+                    </table>
+
+                </div>
+
+                <div id="emptyMessage" class="empty-message" hidden>
+                    No matching voter records found.
+                </div>
+
+                <div class="grand-total">
+                    <span>Grand Total Records</span>
+                    <strong id="grandTotal">0</strong>
+                </div>
+
+                <div class="verification-actions no-print">
+
+                    <button type="button" id="downloadVerificationPdfBtn" class="secondary-pdf-btn">
+                        📄 Download Verification Report
+                    </button>
+
+                </div>
+
+            </section>
+
+            <!-- FOOTER -->
+            <footer class="footer">
+                Ward Wise Voter Directory
+            </footer>
+
+        </div>
+    </div>
+
+    <!-- HEADER -->
+<header class="header">
+  <div class="brand-header-right">
+    <div class="title-wrapper">
+      <h1 class="main-brand-title">SURESH STRATEGIES</h1>
+      <div class="title-underline"></div>
+    </div>
+
+    <div class="rights-reserved-tag">
+      &copy; 2026 Suresh Strategies &bull; All Rights Reserved
+    </div>
+
+    <h2 class="sub-page-title">Ward Wise Voter Directory</h2>
+    <p class="sub-page-desc">Search and manage ward-wise voter records</p>
+  </div>
+</header>
+
+    <!-- Auth Script (Load before or alongside your main script) -->
+    <script src="auth.js"></script>
+    <script type="module" src="voterscript.js"></script>
+
+</body>
+
+</html>
