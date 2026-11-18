@@ -24,7 +24,7 @@
       <div class="title-underline"></div>
     </div>
     <h2 class="sub-page-title">Ward Wise Voter Directory</h2>
-    <p class="sub-page-desc">Search and manage ward-wise voter records</p>
+    <p class="sub-page-desc">Search and manage village & ward-wise voter records</p>
   </div>
 </header>
 
@@ -74,13 +74,21 @@
             <!-- HEADER -->
             <header class="header">
                 <div>
-                    <h1>Ward Wise Voter Directory</h1>
-                    <p>Search and manage ward-wise voter records</p>
+                    <h1 id="activeVillageTitle">Ward Wise Voter Directory</h1>
                 </div>
             </header>
 
             <!-- FILTERS -->
             <section class="filters no-print">
+
+                <!-- NEW: VILLAGE SELECTOR -->
+                <div class="filter-group">
+                    <label for="villageSelect">Select Village</label>
+                    <select id="villageSelect">
+                        <option value="Sampathnagaram">Sampathnagaram</option>
+                        <option value="Pathathungapadu">Pathathungapadu</option>
+                    </select>
+                </div>
 
                 <div class="filter-group">
                     <label for="wardSelect">Select Ward</label>
@@ -334,24 +342,21 @@
         </div>
     </div>
 
-    <!-- HEADER -->
+    <!-- FOOTER BRANDING HEADER -->
 <header class="header">
   <div class="brand-header-right">
     <div class="title-wrapper">
-      <h1 class="main-brand-title">SURESH STRATEGIES</h1>
+      <h1 class="main-brand-title">Suresh Political Strategies</h1>
       <div class="title-underline"></div>
     </div>
 
     <div class="rights-reserved-tag">
-      &copy; 2026 Suresh Strategies &bull; All Rights Reserved
+      &copy; 2026 Suresh Political Strategies &bull; All Rights Reserved
     </div>
-
-    <h2 class="sub-page-title">Ward Wise Voter Directory</h2>
-    <p class="sub-page-desc">Search and manage ward-wise voter records</p>
   </div>
 </header>
 
-    <!-- Auth Script (Load before or alongside your main script) -->
+    <!-- Auth Script -->
     <script src="auth.js"></script>
     <script type="module" src="voterscript.js"></script>
 

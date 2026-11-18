@@ -1,15 +1,25 @@
 import {
   setupFirebaseListener,
   fetchInitialFirebaseData,
-  saveVoterField
+  saveVoterField,
+  setFirebaseVillagePath
 } from "./Voterfirebase-service.js";
 
-const JSON_FILE = "data/voters.json";
+// =====================================
+// VILLAGE JSON FILE MAPPING
+// =====================================
+// Map dropdown values to their respective JSON files in your data/ folder
+const VILLAGE_JSON_MAP = {
+  "Sampathnagaram": "data/sampathnagaram.json",
+  "Pathathungapadu": "data/pathathungapadu.json",
+};
 
 // =====================================
 // HTML ELEMENTS
 // =====================================
 
+const villageSelect = document.getElementById("villageSelect");
+const activeVillageTitle = document.getElementById("activeVillageTitle");
 const wardSelect = document.getElementById("wardSelect");
 const searchInput = document.getElementById("searchInput");
 const clearBtn = document.getElementById("clearBtn");
@@ -30,12 +40,14 @@ const downloadVerificationPdfBtn =
 // STORE DATA
 // =====================================
 
+let currentVillage = villageSelect ? villageSelect.value : "Sampathnagaram";
 let allWards = {};
 let allVoters = [];
 let voters = [];
 
 let verificationData = {};
 let partyData = {};
+let unsubscribeFirebaseListener = null;
 
 // =====================================
 // UNIQUE VOTER IDENTIFICATION
@@ -78,16 +90,38 @@ function normalizeGender(genderValue) {
 }
 
 // =====================================
-// LOAD JSON & INIT FIREBASE
+// LOAD JSON & INIT FIREBASE BY VILLAGE
 // =====================================
 
-async function loadVoters() {
+async function loadVotersForVillage(villageName) {
   try {
+    currentVillage = villageName;
     status.hidden = true;
     count.textContent = "Loading...";
+    if (activeVillageTitle) {
+      activeVillageTitle.textContent = `${villageName} — Ward Wise Voter Directory`;
+    }
 
-    // 1. Start live listener for real-time multi-device updates
-    setupFirebaseListener((newVerification, newParty) => {
+    // Reset state before loading new village
+    allWards = {};
+    allVoters = [];
+    voters = [];
+    verificationData = {};
+    partyData = {};
+    voterTable.innerHTML = "";
+
+    // 1. Clean up existing Firebase listener from previous village
+    if (typeof unsubscribeFirebaseListener === "function") {
+      unsubscribeFirebaseListener();
+      unsubscribeFirebaseListener = null;
+    }
+
+    // 2. Point Firebase service to the selected village node
+    const firebaseNodePath = `voter_directory_records/${villageName}`;
+    setFirebaseVillagePath(firebaseNodePath);
+
+    // 3. Start live listener for real-time updates on this village
+    unsubscribeFirebaseListener = setupFirebaseListener((newVerification, newParty) => {
       verificationData = newVerification;
       partyData = newParty;
       if (allVoters.length > 0) {
@@ -95,9 +129,13 @@ async function loadVoters() {
       }
     });
 
-    // 2. Fetch initial local JSON records and Firebase snapshot concurrently
+    // 4. Determine JSON path for the selected village
+    const jsonFilePath =
+      VILLAGE_JSON_MAP[villageName] || `data/${villageName.toLowerCase()}.json`;
+
+    // 5. Fetch JSON records and initial Firebase snapshot concurrently
     const [response, initialFirebase] = await Promise.all([
-      fetch(JSON_FILE),
+      fetch(jsonFilePath),
       fetchInitialFirebaseData()
     ]);
 
@@ -105,7 +143,7 @@ async function loadVoters() {
     partyData = initialFirebase.partyData;
 
     if (!response.ok) {
-      throw new Error("Unable to load voters.json");
+      throw new Error(`Unable to load ${jsonFilePath}`);
     }
 
     const data = await response.json();
@@ -129,6 +167,7 @@ async function loadVoters() {
 
     createWardOptions();
     wardSelect.value = "ALL";
+    searchInput.value = "";
     filterRecords();
 
   } catch (error) {
@@ -139,9 +178,16 @@ async function loadVoters() {
     voterTable.innerHTML = "";
     count.textContent = "0 Records";
     status.hidden = false;
-    status.textContent = "Unable to load voter data. Check configuration.";
+    status.textContent = `Unable to load voter data for ${villageName}. Ensure ${VILLAGE_JSON_MAP[villageName] || "the JSON file"} exists.`;
     emptyMessage.hidden = false;
     emptyMessage.textContent = "Unable to load voter records.";
+
+    // Reset dashboard counters to 0 on error
+    updateStatistics([]);
+    updateVerificationDashboard([]);
+    updateWardSummary([]);
+    updateVoterToMeSummary([]);
+    updateFamilyGroups([]);
   }
 }
 
@@ -168,8 +214,8 @@ function createWardOptions() {
 
 function filterRecords() {
   const selectedWard = wardSelect.value;
-  voters = selectedWard === "ALL" 
-    ? [...allVoters] 
+  voters = selectedWard === "ALL"
+    ? [...allVoters]
     : allVoters.filter(v => String(v.ward_number) === selectedWard);
   displayVoters();
 }
@@ -268,13 +314,13 @@ function updateVoterToMeSummary(records) {
     if (myParty) {
       wardMap[ward].myTotal++;
       grandMyTotal++;
-      if (gender === "male") { { wardMap[ward].myMale++; grandMyMale++; } }
-      else if (gender === "female") { { wardMap[ward].myFemale++; grandMyFemale++; } }
+      if (gender === "male") { wardMap[ward].myMale++; grandMyMale++; }
+      else if (gender === "female") { wardMap[ward].myFemale++; grandMyFemale++; }
     } else {
       wardMap[ward].otherTotal++;
       grandOtherTotal++;
-      if (gender === "male") { { wardMap[ward].otherMale++; grandOtherMale++; } }
-      else if (gender === "female") { { wardMap[ward].otherFemale++; grandOtherFemale++; } }
+      if (gender === "male") { wardMap[ward].otherMale++; grandOtherMale++; }
+      else if (gender === "female") { wardMap[ward].otherFemale++; grandOtherFemale++; }
     }
   });
 
@@ -428,17 +474,55 @@ voterTable.addEventListener("click", event => {
   }
 });
 
+// Village Dropdown Change Event
+if (villageSelect) {
+  villageSelect.addEventListener("change", event => {
+    const selectedVillage = event.target.value;
+    loadVotersForVillage(selectedVillage);
+  });
+}
+
 wardSelect.addEventListener("change", () => {
   searchInput.value = "";
   filterRecords();
 });
 
 searchInput.addEventListener("input", displayVoters);
+
 clearBtn.addEventListener("click", () => {
   searchInput.value = "";
   displayVoters();
   searchInput.focus();
 });
 
-// Initialize
-loadVoters();
+// PDF Export Handlers (Included with dynamic village filename)
+if (downloadPdfBtn) {
+  downloadPdfBtn.addEventListener("click", () => {
+    const element = document.getElementById("pdfContent");
+    const opt = {
+      margin: 0.4,
+      filename: `${currentVillage}_Voter_Report.pdf`,
+      image: { type: "jpeg", quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: "in", format: "a4", orientation: "landscape" }
+    };
+    html2pdf().set(opt).from(element).save();
+  });
+}
+
+if (downloadVerificationPdfBtn) {
+  downloadVerificationPdfBtn.addEventListener("click", () => {
+    const element = document.getElementById("pdfContent");
+    const opt = {
+      margin: 0.4,
+      filename: `${currentVillage}_Verification_Summary.pdf`,
+      image: { type: "jpeg", quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: "in", format: "a4", orientation: "landscape" }
+    };
+    html2pdf().set(opt).from(element).save();
+  });
+}
+
+// Initialize with default selected village
+loadVotersForVillage(currentVillage);

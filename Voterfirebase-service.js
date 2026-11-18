@@ -12,6 +12,7 @@ import {
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-database.js";
 
+
 const firebaseConfig = {
   apiKey: "AIzaSyBsbhH9D-EHAkRu8_MHA8c46uIJvXtkvTs",
   authDomain: "form-359da.firebaseapp.com",
@@ -22,16 +23,25 @@ const firebaseConfig = {
   appId: "1:214530619278:web:e25beac9d2c023443c96df"
 };
 
+
 // Initialize Firebase & Realtime Database
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
-const DB_PATH = "voter_directory_records/Sampathnagaram";
 
-// Listen to live database changes from other users/devices
+// Dynamic database path (updated whenever the user changes village)
+let DB_PATH = "voter_directory_records/Sampathnagaram";
+
+// Update the active village database path
+export function setFirebaseVillagePath(newPath) {
+  DB_PATH = newPath;
+}
+
+// Listen to live database changes for the currently active village
+// Returns the unsubscribe function so previous village listeners can be detached
 export function setupFirebaseListener(onDataUpdated) {
   const recordsRef = ref(db, DB_PATH);
 
-  onValue(
+  const unsubscribe = onValue(
     recordsRef,
     snapshot => {
       const data = snapshot.val() || {};
@@ -51,9 +61,11 @@ export function setupFirebaseListener(onDataUpdated) {
       console.error("Firebase Realtime Database read error:", error);
     }
   );
+
+  return unsubscribe;
 }
 
-// Fetch initial snapshot once on load
+// Fetch initial snapshot once on load for the active village
 export async function fetchInitialFirebaseData() {
   try {
     const snapshot = await get(ref(db, DB_PATH));
@@ -75,7 +87,7 @@ export async function fetchInitialFirebaseData() {
   return { verificationData: {}, partyData: {} };
 }
 
-// Update ONLY the changed field independently in Firebase
+// Update ONLY the changed field independently in Firebase under the active village node
 export async function saveVoterField(voterKey, fieldName, value) {
   try {
     const voterRef = ref(db, `${DB_PATH}/${voterKey}`);
